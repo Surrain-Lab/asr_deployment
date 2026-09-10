@@ -1,0 +1,23 @@
+# Per-machine configuration - copy config.example.yaml to config.yaml
+config.yaml
+
+# Runtime state
+jobs.db
+jobs.db-wal
+jobs.db-shm
+logs/
+run/
+locks/
+runs/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

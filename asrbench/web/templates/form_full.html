@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>{{ info.title }}</h1>
+<p class="sub">{{ info.blurb }}</p>
+
+<form method="post" action="/new/full" class="card" style="max-width:760px">
+  <label for="audio_dir">Audio folder</label>
+  <div class="row2">
+    <input type="text" id="audio_dir" name="audio_dir" required>
+    <button type="button" class="btn-2" onclick="openBrowser('audio_dir','audio')">Browse</button>
+  </div>
+  <div id="preview-audio_dir"></div>
+
+  <label for="annotated_dir">Annotated transcript folder</label>
+  <div class="row2">
+    <input type="text" id="annotated_dir" name="annotated_dir" required>
+    <button type="button" class="btn-2" onclick="openBrowser('annotated_dir','text')">Browse</button>
+  </div>
+  <div id="preview-annotated_dir"></div>
+
+  <label style="margin-top:18px">Pipeline variants to benchmark</label>
+  {% for k, v in variants.items() %}
+  <label class="chk">
+    <input type="checkbox" name="variants" value="{{k}}"
+      {% if k in ['vtc1_whisperx','vtc2_whisperx'] %}checked{% endif %}>
+    <span><b>{{ v }}</b><span>{{ k }}</span></span>
+  </label>
+  {% endfor %}
+  <p class="muted" style="font-size:12px;margin:6px 0 0">
+    Shared work is done once: audio prep, each VTC inference, and the WhisperX chunk pass are
+    not repeated across variants that need the same thing.
+  </p>
+
+  <label for="language">Language</label>
+  <select id="language" name="language">
+    <option value="Spanish">Spanish</option><option value="English">English</option>
+  </select>
+
+  <label for="device">Device</label>
+  <select id="device" name="device">
+    <option value="cuda">cuda (L40)</option><option value="cpu">cpu</option>
+  </select>
+
+  <label for="label">Label (optional)</label>
+  <input type="text" id="label" name="label">
+
+  <div class="note note-warn" style="margin-top:14px">
+    A full run over a large corpus takes hours. It runs detached, so you can close this tab
+    and come back to it.
+  </div>
+
+  <div style="margin-top:18px"><button type="submit">Queue full benchmark</button></div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>wirePreview('audio_dir','audio'); wirePreview('annotated_dir','text');</script>
+{% endblock %}

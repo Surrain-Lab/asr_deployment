@@ -1,0 +1,36 @@
+{% if not jobs %}
+<p class="muted" style="padding:18px 10px">No jobs yet. Pick a module above to start one.</p>
+{% else %}
+<table>
+<thead><tr>
+  <th style="width:52px">ID</th><th>Job</th><th style="width:96px">Status</th>
+  <th style="width:190px">Progress</th><th style="width:78px">Time</th>
+  <th style="width:62px">Slot</th>
+</tr></thead>
+<tbody>
+{% for j in jobs %}
+<tr class="row">
+  <td class="mono muted">{{ "%05d"|format(j.id) }}</td>
+  <td>
+    <a href="/job/{{j.id}}"><b>{{ j.label or j.module }}</b></a>
+    <div class="muted mono" style="font-size:11.5px">{{ j.info.title }}</div>
+  </td>
+  <td><span class="badge b-{{j.status}}">{{ j.status }}</span></td>
+  <td>
+    <div class="bar {{ 'done' if j.status=='done' else ('failed' if j.status in ['failed','cancelled'] else '') }}">
+      <i style="width:{{ j.pct }}%"></i></div>
+    <div class="muted" style="font-size:11px;margin-top:3px">
+      {% if j.status == 'running' %}{{ j.step_index + 1 }}/{{ j.n_steps }} &middot; {{ j.step_name }}
+      {% elif j.status == 'done' %}{{ j.n_steps }} steps complete
+      {% elif j.status == 'failed' %}{{ j.error }}
+      {% elif j.status == 'queued' %}waiting for a slot
+      {% else %}{{ j.error }}{% endif %}
+    </div>
+  </td>
+  <td class="mono muted">{{ j.duration }}</td>
+  <td class="mono muted">{% if j.gpu is not none %}gpu{{ j.gpu }}{% elif j.needs_gpu %}-{% else %}cpu{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}

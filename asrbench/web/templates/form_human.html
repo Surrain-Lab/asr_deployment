@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>{{ info.title }}</h1>
+<p class="sub">{{ info.blurb }}</p>
+
+<form method="post" action="/new/human" class="card" style="max-width:760px">
+  <label for="annotated_dir">Annotated transcript folder</label>
+  <div class="row2">
+    <input type="text" id="annotated_dir" name="annotated_dir" required
+           placeholder="/home/subedi/Audio_Transcription_Pipeline3.0/annotated-text">
+    <button type="button" class="btn-2" onclick="openBrowser('annotated_dir','text')">Browse</button>
+  </div>
+  <div id="preview-annotated_dir"></div>
+  <p class="muted" style="font-size:12px;margin:6px 0 0">
+    Point at the folder containing recording subfolders of <code>.txt</code> CHAT transcripts.
+    An extra wrapper level is detected and handled for you.
+  </p>
+
+  <label for="label">Label (optional)</label>
+  <input type="text" id="label" name="label" placeholder="defaults to the folder name">
+
+  <label class="chk" style="margin-top:16px">
+    <input type="checkbox" name="word_count" checked>
+    <span><b>Count English / Spanish words</b>
+    <span>Runs count_eng_esp_final.py over the human transcripts.</span></span>
+  </label>
+
+  <div class="note note-ok" style="margin-top:14px">
+    <b>Produces per clip:</b> <code>_clean.txt</code>, <code>_tagged.txt</code>, and both forms for
+    <code>KCHI</code>, <code>OCH</code>, <code>MAL</code>, <code>FEM</code>, <code>ADULT</code>, <code>CHILDREN</code>
+    &mdash; laid out as <code>&lt;recording&gt;/&lt;clip&gt;/</code>, plus a per-recording combined reference.
+  </div>
+
+  <div style="margin-top:18px"><button type="submit">Queue job</button></div>
+</form>
+{% endblock %}
+{% block scripts %}<script>wirePreview('annotated_dir','text');</script>{% endblock %}

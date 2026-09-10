@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Dashboard</h1>
+<p class="sub">Jobs run detached on oceanus. Closing this tab or dropping the SSH tunnel does not stop them.</p>
+
+<h2>Start something</h2>
+<div class="grid">
+  {% for key, m in modules.items() %}
+  <a class="tile" href="/new/{{key}}">
+    <b>{{m.title}}</b>
+    <p>{{m.blurb}}</p>
+  </a>
+  {% endfor %}
+</div>
+
+<h2>Jobs</h2>
+<div class="card" style="padding:6px 8px">
+  <div id="joblist">{% include "_joblist.html" %}</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>poll('/jobs/fragment','joblist',4000);</script>
+{% endblock %}

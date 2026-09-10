@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>{{ info.title }}</h1>
+<p class="sub">{{ info.blurb }}</p>
+
+<form method="post" action="/new/asr" class="card" style="max-width:760px">
+  <label for="audio_dir">Audio folder</label>
+  <div class="row2">
+    <input type="text" id="audio_dir" name="audio_dir" required
+           placeholder="/home/subedi/Audio_Transcription_Pipeline3.0/audio">
+    <button type="button" class="btn-2" onclick="openBrowser('audio_dir','audio')">Browse</button>
+  </div>
+  <div id="preview-audio_dir"></div>
+  <p class="muted" style="font-size:12px;margin:6px 0 0">
+    Parent folder holding one subfolder per recording, each containing that recording's clips.
+    WAVs are normalised to 16 kHz mono <b>into the run directory</b> &mdash; your source audio is never modified.
+  </p>
+
+  <label for="variant">Pipeline variant</label>
+  <select id="variant" name="variant" onchange="onVariant()">
+    {% for k, v in variants.items() %}<option value="{{k}}">{{v}}</option>{% endfor %}
+  </select>
+
+  <div id="rttm-block" style="display:none">
+    <label for="rttm_txt_dir">Reuse an existing rttm_txt folder (optional)</label>
+    <div class="row2">
+      <input type="text" id="rttm_txt_dir" name="rttm_txt_dir"
+             placeholder="leave empty to run the VTC model as part of this job">
+      <button type="button" class="btn-2" onclick="openBrowser('rttm_txt_dir','text')">Browse</button>
+    </div>
+    <p class="muted" style="font-size:12px;margin:6px 0 0">
+      VTC1 and VTC2 <code>rttm_txt</code> share one format, so either can label a WhisperX run.
+      Leave this empty and the required VTC pass is queued automatically first.
+    </p>
+  </div>
+
+  <label for="device">Device</label>
+  <select id="device" name="device">
+    <option value="cuda">cuda (L40)</option>
+    <option value="cpu">cpu</option>
+  </select>
+
+  <label for="label">Label (optional)</label>
+  <input type="text" id="label" name="label" placeholder="defaults to variant / folder name">
+
+  <div style="margin-top:18px"><button type="submit">Queue job</button></div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+wirePreview('audio_dir','audio');
+function onVariant(){
+  const v = document.getElementById('variant').value;
+  document.getElementById('rttm-block').style.display =
+    (v === 'whisperx_vtc1' || v === 'whisperx_vtc2') ? 'block' : 'none';
+}
+onVariant();
+</script>
+{% endblock %}

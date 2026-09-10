@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>{{ info.title }}</h1>
+<p class="sub">{{ info.blurb }}</p>
+
+<form method="post" action="/new/wer" class="card" style="max-width:760px">
+  <label for="ref_dir">Reference folder (human)</label>
+  <div class="row2">
+    <input type="text" id="ref_dir" name="ref_dir" required
+           placeholder="a human_eval/five_mins_benchmark folder">
+    <button type="button" class="btn-2" onclick="openBrowser('ref_dir','text')">Browse</button>
+  </div>
+  <div id="preview-ref_dir"></div>
+
+  <label for="hyp_dir">Hypothesis folder (ASR)</label>
+  <div class="row2">
+    <input type="text" id="hyp_dir" name="hyp_dir" required
+           placeholder="a speaker_separated or tagged_transcripts folder">
+    <button type="button" class="btn-2" onclick="openBrowser('hyp_dir','text')">Browse</button>
+  </div>
+  <div id="preview-hyp_dir"></div>
+  <p class="muted" style="font-size:12px;margin:6px 0 0">
+    Both sides must use the <code>&lt;recording&gt;/&lt;clip&gt;/&lt;clip&gt;_&lt;SPEAKER&gt;_clean.txt</code> layout.
+    Scored per speaker: OVERALL, ADULT, CHILDREN, KCHI, OCH, MAL, FEM. <code>[OVERLAP]</code> segments are excluded.
+  </p>
+
+  <label for="language">Language</label>
+  <select id="language" name="language">
+    <option value="Spanish">Spanish</option><option value="English">English</option>
+  </select>
+
+  <label class="chk" style="margin-top:16px">
+    <input type="checkbox" name="aggregate" checked>
+    <span><b>Also aggregate per recording</b>
+    <span>Sums S/D/I/N across clips and recomputes corpus-level WER rather than averaging.</span></span>
+  </label>
+
+  <label class="chk">
+    <input type="checkbox" name="by_language" id="by_language" onchange="onByLang()">
+    <span><b>Break WER down by language (English vs Spanish)</b>
+    <span>Per clip per language, plus a corpus-level EN / ES / undetermined summary.</span></span>
+  </label>
+
+  <div id="lang-block" style="display:none">
+    <label for="flavor">Which pipeline produced the hypothesis transcripts?</label>
+    <select id="flavor" name="flavor">
+      <option value="vtc2">VTC2</option>
+      <option value="vtc1">VTC1</option>
+      <option value="whisperx">WhisperX</option>
+    </select>
+    <div class="note note-warn" style="margin-top:8px">
+      The language split needs language-tagged text. If the hypothesis folder has
+      not already been through langdetect, that pass is added to this job
+      automatically &mdash; and the three langdetect scripts genuinely differ, so the
+      pipeline above must match. Picking wrong silently changes the split.
+    </div>
+  </div>
+
+  <label for="label">Label (optional)</label>
+  <input type="text" id="label" name="label" placeholder="defaults to hypothesis vs reference">
+
+  <div style="margin-top:18px"><button type="submit">Queue job</button></div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+wirePreview('ref_dir','text'); wirePreview('hyp_dir','text');
+function onByLang(){
+  document.getElementById('lang-block').style.display =
+    document.getElementById('by_language').checked ? 'block' : 'none';
+}
+onByLang();
+</script>
+{% endblock %}

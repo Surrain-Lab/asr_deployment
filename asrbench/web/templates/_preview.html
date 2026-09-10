@@ -1,0 +1,42 @@
+{% if corpus is none %}
+  <div class="note note-bad">Not a readable directory, or outside the allowed roots.</div>
+{% elif not corpus.ok %}
+  <div class="note note-bad"><b>Nothing found.</b> No matching files under this folder.</div>
+{% else %}
+  {% if corpus.mixed %}
+  <div class="note note-bad">
+    <b>Careful &mdash; recordings come from {{ corpus.groups|length }} different parent folders.</b>
+    Selecting this level merges collections that are kept separate on disk. Pick one of these instead
+    unless you really mean to combine them:
+    <div class="mono" style="margin-top:6px;font-size:11.5px">
+      {% for g in corpus.groups %}{{ g }}<br>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="note {{ 'note-warn' if (corpus.extra_levels and not corpus.mixed) else ('note-bad' if corpus.mixed else 'note-ok') }}">
+    <b>{{ corpus.n_recordings }} recording{{ '' if corpus.n_recordings == 1 else 's' }},
+       {{ corpus.n_clips }} clip{{ '' if corpus.n_clips == 1 else 's' }}</b>
+    {% if corpus.shape == 'output' %}
+      &mdash; {{ '{:,}'.format(corpus.n_files) }} files, pipeline output layout
+      (<code>&lt;recording&gt;/&lt;clip&gt;/&lt;clip&gt;_&lt;SPEAKER&gt;_clean.txt</code>)
+    {% else %}
+      &mdash; input layout (<code>&lt;recording&gt;/&lt;clip&gt;</code>)
+    {% endif %}
+
+    {% if corpus.flat %}
+      <div style="margin-top:5px">Clips sit directly in this folder, so it is treated as one recording.</div>
+    {% elif corpus.extra_levels and not corpus.mixed %}
+      <div style="margin-top:5px">Recordings sit {{ corpus.extra_levels }}
+        level{{ '' if corpus.extra_levels == 1 else 's' }} below the folder you picked, under
+        <code>{{ corpus.effective_root }}</code>. Handled automatically.</div>
+    {% endif %}
+
+    <div class="mono" style="margin-top:7px;font-size:11.5px;opacity:.85">
+      {% for r in corpus.recordings[:4] %}
+        {{ r.rel }}/ &nbsp;<span style="opacity:.6">{{ r.n_clips }} clips</span><br>
+      {% endfor %}
+      {% if corpus.n_recordings > 4 %}<span style="opacity:.6">+ {{ corpus.n_recordings - 4 }} more</span>{% endif %}
+    </div>
+  </div>
+{% endif %}

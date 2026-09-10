@@ -1,0 +1,28 @@
+<div class="mono muted" style="margin-bottom:9px">{{ rel or '/' }}</div>
+<div class="dirlist">
+  {% if parent is not none %}
+  <a href="javascript:void(0)" onclick="refreshFiles('{{ parent }}')">../</a>
+  {% endif %}
+  {% for d in dirs %}
+  <a href="javascript:void(0)" onclick="refreshFiles('{{ d.rel }}')">{{ d.name }}/</a>
+  {% endfor %}
+</div>
+{% if files %}
+<table style="margin-top:10px">
+<thead><tr><th>File</th><th style="width:90px" class="right">Size</th><th style="width:130px"></th></tr></thead>
+<tbody>
+{% for f in files %}
+<tr class="row">
+  <td class="mono">{{ f.name }}</td>
+  <td class="right muted mono">{{ '{:,}'.format(f.size) }}</td>
+  <td class="right">
+    <a class="btn btn-2 btn-sm" target="_blank" href="/job/{{job.id}}/view?rel={{ f.rel }}">View</a>
+    <a class="btn btn-2 btn-sm" href="/job/{{job.id}}/raw?rel={{ f.rel }}">Get</a>
+  </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% elif not dirs %}
+<p class="muted" style="margin-top:10px">Nothing here yet.</p>
+{% endif %}

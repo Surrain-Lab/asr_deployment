@@ -1,0 +1,36 @@
+<div class="card" data-status="{{ job.status }}">
+  <div class="between" style="margin-bottom:12px">
+    <span class="badge b-{{job.status}}">{{ job.status }}</span>
+    <span class="muted mono" style="font-size:12px">
+      {{ job.duration }} &middot;
+      {% if job.gpu is not none %}gpu {{ job.gpu }}{% else %}cpu{% endif %} &middot;
+      step {{ job.step_index + (1 if job.status=='running' else 0) }}/{{ job.n_steps }}
+    </span>
+  </div>
+  <div class="bar {{ 'done' if job.status=='done' else ('failed' if job.status in ['failed','cancelled'] else '') }}">
+    <i style="width:{{ job.pct }}%"></i></div>
+
+  {% if job.error %}
+  <div class="note note-bad" style="margin-top:12px"><b>Error:</b> {{ job.error }}</div>
+  {% endif %}
+
+  <dl class="kv" style="margin-top:14px">
+    <dt>Run directory</dt><dd>{{ job.run_dir }}</dd>
+    {% for k, v in job.params_d.items() %}
+      {% if v != '' and v is not none %}<dt>{{ k }}</dt><dd>{{ v }}</dd>{% endif %}
+    {% endfor %}
+  </dl>
+
+  <h2 style="margin:18px 0 8px;font-size:13px">Steps</h2>
+  <ul class="steps">
+    {% for s in steps %}
+    <li class="{% if loop.index0 < job.step_index %}done{% elif loop.index0 == job.step_index and job.status == 'running' %}now{% elif loop.index0 == job.step_index and job.status == 'failed' %}bad{% endif %}">
+      {{ s.name }}
+      <span class="muted" style="font-size:11px">
+        {% if s.gpu %}&middot; gpu{% endif %}
+        {% if s.env == 'vtc1' %}&middot; pyannote env{% elif s.env == 'none' %}&middot; uv{% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>

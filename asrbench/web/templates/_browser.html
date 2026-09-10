@@ -1,0 +1,22 @@
+<div class="flex" style="margin-bottom:10px;flex-wrap:wrap">
+  {% for r in roots %}
+  <button class="btn-2 btn-sm" onclick="loadBrowser('{{r}}','{{kind}}')">{{r}}</button>
+  {% endfor %}
+</div>
+<div class="mono muted" style="margin-bottom:8px;word-break:break-all">{{ cwd }}</div>
+
+{% include "_preview.html" %}
+
+<div class="between" style="margin:12px 0">
+  <button onclick="choose('{{ cwd }}')">Use this folder</button>
+  <span class="muted" style="font-size:12px">{{ entries|length }} subfolder{{ '' if entries|length == 1 else 's' }}</span>
+</div>
+
+<div class="dirlist">
+  {% if parent %}
+  <a href="javascript:void(0)" onclick="loadBrowser('{{ parent }}','{{kind}}')">../</a>
+  {% endif %}
+  {% for e in entries %}
+  <a href="javascript:void(0)" onclick="loadBrowser('{{ e }}','{{kind}}')">{{ e.name }}/</a>
+  {% endfor %}
+</div>

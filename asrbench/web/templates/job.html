@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Job {{ "%05d"|format(job.id) }} - ASR Benchmark{% endblock %}
+{% block body %}
+<div class="between">
+  <div>
+    <h1>{{ job.label or job.module }}</h1>
+    <p class="sub">{{ job.info.title }} &middot; job {{ "%05d"|format(job.id) }}</p>
+  </div>
+  <div class="flex">
+    <a class="btn btn-2 btn-sm" href="/job/{{job.id}}/zip">Download results (zip)</a>
+    {% if job.status in ['queued','running'] %}
+    <form method="post" action="/job/{{job.id}}/cancel" style="margin:0">
+      <button class="btn-danger btn-sm" type="submit">Cancel</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div id="jobstatus">{% include "_jobstatus.html" %}</div>
+
+<h2>Log</h2>
+<pre class="log" id="log">loading...</pre>
+
+<h2>Output files</h2>
+<div class="card" id="files">loading...</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const JOB = {{ job.id }};
+let terminal = {{ 'true' if job.status in ['done','failed','cancelled'] else 'false' }};
+
+function refreshStatus(){
+  fetch('/job/'+JOB+'/status').then(r=>r.text()).then(h=>{
+    document.getElementById('jobstatus').innerHTML = h;
+    const s = document.querySelector('[data-status]');
+    if(s && ['done','failed','cancelled'].includes(s.dataset.status)){
+      if(!terminal){ terminal = true; refreshFiles(); }
+    }
+  });
+}
+function refreshLog(){
+  const el = document.getElementById('log');
+  const stick = el.scrollTop + el.clientHeight >= el.scrollHeight - 40;
+  fetch('/job/'+JOB+'/log').then(r=>r.text()).then(t=>{
+    el.textContent = t || '(empty)';
+    if(stick) el.scrollTop = el.scrollHeight;
+  });
+}
+function refreshFiles(rel){
+  fetch('/job/'+JOB+'/files?rel='+encodeURIComponent(rel||''))
+    .then(r=>r.text()).then(h=> document.getElementById('files').innerHTML = h);
+}
+refreshStatus(); refreshLog(); refreshFiles();
+setInterval(()=>{ if(!terminal){ refreshStatus(); refreshLog(); } }, 3000);
+</script>
+{% endblock %}

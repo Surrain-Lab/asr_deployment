@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>{{ info.title }}</h1>
+<p class="sub">{{ info.blurb }}</p>
+
+<form method="post" action="/new/langvocab" class="card" style="max-width:760px">
+  <label for="input_dir">Transcript folder to analyse</label>
+  <div class="row2">
+    <input type="text" id="input_dir" name="input_dir" required
+           placeholder="a speaker_separated or tagged_transcripts folder">
+    <button type="button" class="btn-2" onclick="openBrowser('input_dir','text')">Browse</button>
+  </div>
+  <div id="preview-input_dir"></div>
+
+  <label for="flavor">Which pipeline produced these transcripts?</label>
+  <select id="flavor" name="flavor">
+    <option value="vtc2">VTC2</option>
+    <option value="vtc1">VTC1</option>
+    <option value="whisperx">WhisperX</option>
+  </select>
+  <p class="muted" style="font-size:12px;margin:6px 0 0">
+    This matters: the three language-detection scripts genuinely differ. VTC1's handles the
+    <code>[SPEECH]</code> class the others do not, and the WhisperX one reads only
+    <code>&lt;clip&gt;_tagged.txt</code>. Picking the wrong one silently changes the counts.
+  </p>
+
+  <label for="ref_dir">Human reference folder (optional)</label>
+  <div class="row2">
+    <input type="text" id="ref_dir" name="ref_dir"
+           placeholder="enables vocabulary tables and WER by language">
+    <button type="button" class="btn-2" onclick="openBrowser('ref_dir','text')">Browse</button>
+  </div>
+  <div id="preview-ref_dir"></div>
+  <p class="muted" style="font-size:12px;margin:6px 0 0">
+    Supply this to also produce <code>wer_by_language.csv</code>, <code>vocab_by_clip.csv</code>
+    and <code>vocab_by_speaker.csv</code>.
+  </p>
+
+  <label for="label">Label (optional)</label>
+  <input type="text" id="label" name="label">
+
+  <div style="margin-top:18px"><button type="submit">Queue job</button></div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>wirePreview('input_dir','text'); wirePreview('ref_dir','text');</script>
+{% endblock %}
