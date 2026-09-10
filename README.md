@@ -27,8 +27,13 @@ than containing it, so a clone alone is not enough. The server also needs:
 | `Audio_Transcription_Pipeline3.0` | The scripts being wrapped. 27 specific files are required. |
 | VTC1 checkout | [voice-type-classifier](https://github.com/MarvinLvn/voice-type-classifier), with `apply.sh` |
 | VTC2 checkout | [LAAC-LSCP/VTC](https://github.com/LAAC-LSCP/VTC), with `best.ckpt` fetched via git-lfs |
-| conda env for WhisperX | WhisperX, jiwer, langdetect, openpyxl. Called `whisperx` by default. |
+| conda env for WhisperX | Python 3.10 + WhisperX, jiwer, langdetect, openpyxl. Called `whisperx` by default. |
 | conda env for VTC1 | Python 3.8 + old pyannote-audio. Called `pyannote` by default. Must be separate; the two are incompatible. |
+
+Exact exports of both environments are in `envs/`, along with notes on
+recreating them &mdash; see `envs/README.md`. Setting those two up, and fetching the
+VTC2 weights through git-lfs, is the bulk of the work on a new machine; the
+repository itself needs nothing but a clone and a config file.
 | System tools | `ffmpeg`, `ffprobe`, `sox`, `uv`, `git-lfs` |
 | GPU | Optional but strongly recommended. CPU works and is very slow. |
 
