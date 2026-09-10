@@ -68,13 +68,19 @@ def has_langdetect(d) -> bool:
     return next(path.rglob("*_tagged_langdetect.txt"), None) is not None
 
 
-def _step(name, cmd, env="main", cwd=None, gpu=False, lock=None, key=None):
+def _step(name, cmd, env="main", cwd=None, gpu=False, lock=None, key=None,
+          expect=None, expect_min=1):
     """One executable step.
 
     `key` names shared work that must happen at most once in a combined run
     (audio preparation, each VTC inference, the WhisperX chunk pass). It is an
     explicit label rather than something inferred from `name`, because matching
     on names silently skips a step the moment a name is reworded.
+
+    `expect` is a directory that must contain at least `expect_min` files once
+    the step succeeds. Several of the wrapped scripts exit 0 after finding no
+    input and writing nothing, which otherwise surfaces as a confusing failure
+    many steps later - or worse, as an empty result nobody notices.
     """
     return {
         "name": name,
@@ -84,6 +90,8 @@ def _step(name, cmd, env="main", cwd=None, gpu=False, lock=None, key=None):
         "gpu": bool(gpu),
         "lock": lock,
         "key": key,
+        "expect": str(expect) if expect else None,
+        "expect_min": expect_min,
     }
 
 
@@ -99,6 +107,7 @@ def run_layout(run_dir: Path) -> dict:
         },
         "vtc1": {
             "rttm_raw": r / "vtc1" / "rttm_raw",
+            "rttm_by_clip": r / "vtc1" / "rttm_by_clip",
             "rttm_txt": r / "vtc1" / "rttm_txt",
             "tagged": r / "vtc1" / "tagged_transcripts",
             "speaker_separated": r / "vtc1" / "speaker_separated",
@@ -122,6 +131,8 @@ def run_layout(run_dir: Path) -> dict:
             "chunks": r / "whisperx_only" / "chunks",
             "raw": r / "whisperx_only" / "raw_transcripts",
             "merged": r / "whisperx_only" / "merged",
+            "speakerdir_vtc1": r / "whisperx_only" / "speakerdir_vtc1",
+            "speakerdir_vtc2": r / "whisperx_only" / "speakerdir_vtc2",
             "tagged_vtc1": r / "whisperx_only" / "tagged_vtc1",
             "tagged_vtc2": r / "whisperx_only" / "tagged_vtc2",
             "eval_report": r / "whisperx_only" / "eval_report",
@@ -170,11 +181,23 @@ def vtc1_rttm(audio: Path, L: dict, device: str) -> list:
              "--model", model, "--audio", audio, "--dest", L["vtc1"]["rttm_raw"]],
             lock="vtc1", key="vtc1",
         ),
+        # apply.sh emits ONE all.rttm per recording folder, with a per-clip URI
+        # in column 2, but whisperx_vtc_transcribe_unmerged.py wants one
+        # timestamp file per clip. Pipeline 3.0 ships split_rttm_by_uri.py for
+        # exactly this and its orchestrator never calls it, so VTC1 run through
+        # run_pipeline.py yields recording-level text that the transcribe step
+        # then silently skips. Splitting here is what makes VTC1 work at all.
+        _step(
+            "Split VTC1 RTTM by clip",
+            [PY_MAIN, cfg.pipeline3 / "split_rttm_by_uri.py",
+             L["vtc1"]["rttm_raw"], L["vtc1"]["rttm_by_clip"], audio],
+            key="vtc1", expect=L["vtc1"]["rttm_by_clip"],
+        ),
         _step(
             "VTC1 RTTM -> timestamped text",
             [PY_MAIN, cfg.vtc1_dir / "rttm_txt_unmerged.py",
-             "-i", L["vtc1"]["rttm_raw"], "-o", L["vtc1"]["rttm_txt"]],
-            key="vtc1",
+             "-i", L["vtc1"]["rttm_by_clip"], "-o", L["vtc1"]["rttm_txt"]],
+            key="vtc1", expect=L["vtc1"]["rttm_txt"],
         ),
     ]
 
@@ -251,10 +274,12 @@ def plan_asr(params: dict, run_dir: Path) -> list:
             _step("WhisperX on VTC1 segments",
                   [PY_MAIN, cfg.vtc1_dir / "whisperx_vtc_transcribe_unmerged.py",
                    "--audio", audio, "--rttm", L["vtc1"]["rttm_txt"],
-                   "--output", L["vtc1"]["tagged"]], gpu=True),
+                   "--output", L["vtc1"]["tagged"]], gpu=True,
+                  expect=L["vtc1"]["tagged"]),
             _step("Split VTC1 transcripts by speaker",
                   [PY_MAIN, cfg.vtc1_dir / "split_transcript_step2_unmerged.py",
-                   "-i", L["vtc1"]["tagged"], "-o", L["vtc1"]["speaker_separated"]]),
+                   "-i", L["vtc1"]["tagged"], "-o", L["vtc1"]["speaker_separated"]],
+                  expect=L["vtc1"]["speaker_separated"]),
         ]
         return steps
 
@@ -264,10 +289,12 @@ def plan_asr(params: dict, run_dir: Path) -> list:
             _step("WhisperX on VTC2 segments",
                   [PY_MAIN, cfg.vtc2_dir / "whisperx_vtc2_transcrib.py",
                    "--audio", audio, "--rttm", L["vtc2"]["rttm_txt"],
-                   "--output", L["vtc2"]["tagged"]], gpu=True),
+                   "--output", L["vtc2"]["tagged"]], gpu=True,
+                  expect=L["vtc2"]["tagged"]),
             _step("Split VTC2 transcripts by speaker",
                   [PY_MAIN, cfg.vtc2_dir / "labels_seperator.py",
-                   "-i", L["vtc2"]["tagged"], "-o", L["vtc2"]["speaker_separated"]]),
+                   "-i", L["vtc2"]["tagged"], "-o", L["vtc2"]["speaker_separated"]],
+                  expect=L["vtc2"]["speaker_separated"]),
         ]
         return steps
 
@@ -281,7 +308,7 @@ def plan_asr(params: dict, run_dir: Path) -> list:
         _step("Merge chunk transcripts",
               [PY_MAIN, cfg.whisperx_dir / "merge_whisperx_generated_chunk_step2.py",
                "-i", L["whisperx"]["raw"], "-o", L["whisperx"]["merged"]],
-              key="wx_chunks"),
+              key="wx_chunks", expect=L["whisperx"]["merged"]),
     ]
 
     if variant == "whisperx_only":
@@ -293,13 +320,23 @@ def plan_asr(params: dict, run_dir: Path) -> list:
     src = "vtc1" if variant == "whisperx_vtc1" else "vtc2"
     reuse = params.get("rttm_txt_dir", "").strip()
     if reuse:
-        speaker_dir = Path(reuse)
+        raw_speaker_dir = Path(reuse)
     elif src == "vtc1":
         steps = vtc1_rttm(audio, L, device) + steps
-        speaker_dir = L["vtc1"]["rttm_txt"]
+        raw_speaker_dir = L["vtc1"]["rttm_txt"]
     else:
         steps = vtc2_rttm(audio, L, device) + steps
-        speaker_dir = L["vtc2"]["rttm_txt"]
+        raw_speaker_dir = L["vtc2"]["rttm_txt"]
+
+    # The tagger resolves BOTH inputs as <dir>/<recording>/<clip>. The merged
+    # transcripts are already shaped that way; rttm_txt is keyed by clip, so it
+    # has to be reshaped or the tagger silently matches nothing.
+    speaker_dir = L["whisperx"][f"speakerdir_{src}"]
+    steps.append(_step(
+        f"Reshape {src.upper()} timestamps for the tagger",
+        [PY_MAIN, MODULES_DIR / "build_speaker_dir.py",
+         "--rttm-txt", raw_speaker_dir, "--audio", audio, "--dest", speaker_dir],
+        key=f"wx_spk_{src}", expect=speaker_dir))
 
     steps.append(_step(
         f"Assign speaker labels from {src.upper()} RTTM timestamps",
@@ -307,7 +344,7 @@ def plan_asr(params: dict, run_dir: Path) -> list:
          "--speaker-dir", speaker_dir,
          "--source-dir", L["whisperx"]["merged"],
          "--output-dir", L["whisperx"][f"tagged_{src}"]],
-        key=f"wx_tag_{src}"))
+        key=f"wx_tag_{src}", expect=L["whisperx"][f"tagged_{src}"]))
     return steps
 
 

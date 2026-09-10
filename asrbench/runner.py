@@ -205,6 +205,23 @@ def run_job(job_id: int) -> int:
             rc = 1
 
         elapsed = time.time() - started
+
+        # Several wrapped scripts exit 0 after finding no input and writing
+        # nothing. Treat a declared-but-empty output as a failure here, where
+        # the cause is obvious, rather than letting it surface many steps later
+        # or slip through as an empty result.
+        if rc == 0 and step.get("expect"):
+            want = Path(step["expect"])
+            found = sum(1 for _ in want.rglob("*")) if want.is_dir() else 0
+            files = sum(1 for f in want.rglob("*") if f.is_file()) if want.is_dir() else 0
+            if files < step.get("expect_min", 1):
+                log(f"    !! produced no output: {want} has {files} file(s), "
+                    f"expected at least {step.get('expect_min', 1)}")
+                log(f"       The command exited 0, so it found nothing to do rather "
+                    f"than failing. Check that the previous step's output is laid "
+                    f"out the way this one expects.")
+                rc = 66
+
         if rc != 0:
             log()
             log(f"[{stamp()}] FAILED at step {idx + 1} ({step['name']}) "
