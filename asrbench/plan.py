@@ -115,14 +115,20 @@ def run_layout(run_dir: Path) -> dict:
             "langdetect": r / "vtc2" / "langdetect",
             "word_count": r / "vtc2" / "word_count",
         },
+        # The chunk transcription is shared, but the speaker labels are not:
+        # tagging with VTC1 and with VTC2 must land in separate folders or the
+        # second overwrites the first and both variants score identically.
         "whisperx": {
             "chunks": r / "whisperx_only" / "chunks",
             "raw": r / "whisperx_only" / "raw_transcripts",
             "merged": r / "whisperx_only" / "merged",
-            "tagged": r / "whisperx_only" / "tagged_transcripts",
+            "tagged_vtc1": r / "whisperx_only" / "tagged_vtc1",
+            "tagged_vtc2": r / "whisperx_only" / "tagged_vtc2",
             "eval_report": r / "whisperx_only" / "eval_report",
-            "langdetect": r / "whisperx_only" / "langdetect",
-            "word_count": r / "whisperx_only" / "word_count",
+            "langdetect_vtc1": r / "whisperx_only" / "langdetect_vtc1",
+            "langdetect_vtc2": r / "whisperx_only" / "langdetect_vtc2",
+            "word_count_vtc1": r / "whisperx_only" / "word_count_vtc1",
+            "word_count_vtc2": r / "whisperx_only" / "word_count_vtc2",
         },
         "reports": r / "reports",
     }
@@ -284,10 +290,11 @@ def plan_asr(params: dict, run_dir: Path) -> list:
     # Speaker labels come from a VTC RTTM. Either reuse one the user points at,
     # or produce it here. VTC1 and VTC2 rttm_txt share an identical format, so
     # the tagger accepts either.
+    src = "vtc1" if variant == "whisperx_vtc1" else "vtc2"
     reuse = params.get("rttm_txt_dir", "").strip()
     if reuse:
         speaker_dir = Path(reuse)
-    elif variant == "whisperx_vtc1":
+    elif src == "vtc1":
         steps = vtc1_rttm(audio, L, device) + steps
         speaker_dir = L["vtc1"]["rttm_txt"]
     else:
@@ -295,11 +302,12 @@ def plan_asr(params: dict, run_dir: Path) -> list:
         speaker_dir = L["vtc2"]["rttm_txt"]
 
     steps.append(_step(
-        "Assign speaker labels from RTTM timestamps",
+        f"Assign speaker labels from {src.upper()} RTTM timestamps",
         [PY_MAIN, cfg.whisperx_dir / "transcript_based_speaker_tagger_step3.py",
          "--speaker-dir", speaker_dir,
          "--source-dir", L["whisperx"]["merged"],
-         "--output-dir", L["whisperx"]["tagged"]]))
+         "--output-dir", L["whisperx"][f"tagged_{src}"]],
+        key=f"wx_tag_{src}"))
     return steps
 
 
@@ -439,14 +447,18 @@ def plan_full(params: dict, run_dir: Path) -> list:
         emitted.update(st["key"] for st in sub if st.get("key"))
 
     # Evaluation for each variant against the human reference produced above.
+    # whisperx_only stops at merged chunk text - one file per clip, with no
+    # speaker separation - so there is nothing for a per-speaker evaluation to
+    # read. It is transcribed but not scored.
     hyp_for = {
         "vtc1_whisperx": L["vtc1"]["speaker_separated"],
         "vtc2_whisperx": L["vtc2"]["speaker_separated"],
-        "whisperx_only": L["whisperx"]["tagged"],
-        "whisperx_vtc1": L["whisperx"]["tagged"],
-        "whisperx_vtc2": L["whisperx"]["tagged"],
+        "whisperx_vtc1": L["whisperx"]["tagged_vtc1"],
+        "whisperx_vtc2": L["whisperx"]["tagged_vtc2"],
     }
     for v in variants:
+        if v not in hyp_for:
+            continue
         out = L["reports"] / f"eval_{v}"
         aligned = Path(run_dir) / "hyp_aligned" / v
         steps += [
@@ -466,17 +478,15 @@ def plan_full(params: dict, run_dir: Path) -> list:
 
     # Step 4: language re-detection and EN/ES word counts, per variant. The
     # comparison workbook needs these, and each pipeline needs its own tagger.
-    seen_flavor = set()
     for v in variants:
-        flavor, src = VARIANT_SOURCE[v]
-        if flavor in seen_flavor:
+        spec = VARIANT_SOURCE.get(v)
+        if spec is None:
             continue
-        seen_flavor.add(flavor)
-        src_dir = L[flavor if flavor != "whisperx" else "whisperx"][src]
-        steps += plan_langvocab({
-            "input_dir": str(src_dir), "flavor": flavor,
-        }, run_dir, out_lang=L[_LKEY[flavor]]["langdetect"],
-           out_count=L[_LKEY[flavor]]["word_count"])
+        flavor, in_key, lang_key, count_key = spec
+        tree = "whisperx" if v.startswith("whisperx_") else flavor
+        steps += plan_langvocab(
+            {"input_dir": str(L[tree][in_key]), "flavor": flavor}, run_dir,
+            out_lang=L[tree][lang_key], out_count=L[tree][count_key])
 
     # Cross-pipeline comparison workbooks.
     steps.append(_step(
@@ -489,14 +499,14 @@ def plan_full(params: dict, run_dir: Path) -> list:
 # Which transcripts each variant produces, and which language-detection script
 # understands them. The three taggers are NOT interchangeable: VTC1's handles
 # the [SPEECH] class the others lack, and WhisperX's reads only <clip>_tagged.txt.
+# variant -> (langdetect flavour, transcripts key, langdetect out, counts out).
+# whisperx_only is absent: it has no speaker-separated text to analyse.
 VARIANT_SOURCE = {
-    "vtc1_whisperx": ("vtc1", "speaker_separated"),
-    "vtc2_whisperx": ("vtc2", "speaker_separated"),
-    "whisperx_only": ("whisperx", "tagged"),
-    "whisperx_vtc1": ("whisperx", "tagged"),
-    "whisperx_vtc2": ("whisperx", "tagged"),
+    "vtc1_whisperx": ("vtc1", "speaker_separated", "langdetect", "word_count"),
+    "vtc2_whisperx": ("vtc2", "speaker_separated", "langdetect", "word_count"),
+    "whisperx_vtc1": ("whisperx", "tagged_vtc1", "langdetect_vtc1", "word_count_vtc1"),
+    "whisperx_vtc2": ("whisperx", "tagged_vtc2", "langdetect_vtc2", "word_count_vtc2"),
 }
-_LKEY = {"vtc1": "vtc1", "vtc2": "vtc2", "whisperx": "whisperx"}
 
 
 PLANNERS = {

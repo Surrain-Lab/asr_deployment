@@ -30,13 +30,14 @@ VARIANT_LABEL = {
     "whisperx_vtc1": "Whisper + VTC1 labels",
     "whisperx_vtc2": "Whisper + VTC2 labels",
 }
-# Where each variant's word counts land in the run layout.
+# Where each variant's word counts land. The two WhisperX label sources write
+# to separate folders, so they must be read from separate folders too.
+# whisperx_only is absent: it produces no speaker-separated text to count.
 VARIANT_WC = {
     "vtc1_whisperx": ("vtc1", "word_count"),
     "vtc2_whisperx": ("vtc2", "word_count"),
-    "whisperx_only": ("whisperx", "word_count"),
-    "whisperx_vtc1": ("whisperx", "word_count"),
-    "whisperx_vtc2": ("whisperx", "word_count"),
+    "whisperx_vtc1": ("whisperx", "word_count_vtc1"),
+    "whisperx_vtc2": ("whisperx", "word_count_vtc2"),
 }
 
 
@@ -109,7 +110,9 @@ def main() -> int:
     wc_pipelines = [("Human Eval", L["human"]["word_count"])]
     seen = set()
     for v in args.variants:
-        key = VARIANT_WC[v]
+        key = VARIANT_WC.get(v)
+        if key is None:
+            continue
         if key in seen:
             continue
         seen.add(key)
