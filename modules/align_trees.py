@@ -6,12 +6,11 @@ folder name:
 
     <hyp>/<recording from ref>/<clip>/<clip>_<SPEAKER>_clean.txt
 
-but the two trees do not always agree on that name. In this corpus the human
-reference calls three recordings `REC-0001_pre_1`, `REC-0002_pre_1`
-and `REC-0003_pre_1` while the pipeline outputs call them
-`REC-0001_pre`, `REC-0002_pre` and `REC-0003_pre` - the clip
-folders inside are named identically on both sides. The project's own
-transcript_tags.canonical_key() documents this and sidesteps it, which is why
+but the two trees do not always agree on that name - a reference may carry a
+batch suffix on the recording folder that the pipeline output drops, for
+instance - even though the clip folders inside are named identically on both
+sides. The project's own transcript_tags.canonical_key() documents this and
+sidesteps it by deriving the key from the clip name, which is why
 wer_by_language.py is unaffected; evaluation.py has no such protection and
 simply finds nothing, scoring a silent 100% WER for every affected clip.
 

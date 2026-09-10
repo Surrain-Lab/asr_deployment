@@ -314,10 +314,10 @@ def plan_wer(params: dict, run_dir: Path) -> list:
     aligned = Path(run_dir) / "hyp_aligned"
     steps = [
         # evaluation.py finds a hypothesis by joining the REFERENCE's recording
-        # folder name, and the two trees do not always agree on it - the human
-        # reference says REC-0001_pre_1 where the pipelines say
-        # REC-0001_pre. Unaligned, those recordings score a silent 100% WER.
-        # This builds a symlinked view under the reference's names first.
+        # folder name, and the two trees do not always agree on it (a batch
+        # suffix present on one side and not the other, say). Unaligned, those
+        # recordings score a silent 100% WER, so this builds a symlinked view
+        # of the hypothesis under the reference's names first.
         _step("Align hypothesis folder names to the reference",
               [PY_MAIN, MODULES_DIR / "align_trees.py",
                "--ref", params["ref_dir"], "--hyp", params["hyp_dir"],

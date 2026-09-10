@@ -114,21 +114,21 @@ Input, one folder per recording, clips inside:
 
 ```
 <audio folder>/
-  REC-0002_pre/
-    REC-0002_pre_1_002.wav
-    REC-0002_pre_1_049.wav
+  <recording-id>/
+    <recording-id>_001.wav
+    <recording-id>_002.wav
 ```
 
 Output, one folder per clip:
 
 ```
 <run>/human_eval/five_mins_benchmark/
-  REC-0002_pre/
-    REC-0002_pre_1_002/
-      REC-0002_pre_1_002_clean.txt
-      REC-0002_pre_1_002_KCHI_clean.txt
-      REC-0002_pre_1_002_KCHI_tagged.txt
-      REC-0002_pre_1_002_FEM_clean.txt
+  <recording-id>/
+    <recording-id>_001/
+      <recording-id>_001_clean.txt
+      <recording-id>_001_KCHI_clean.txt
+      <recording-id>_001_KCHI_tagged.txt
+      <recording-id>_001_FEM_clean.txt
       ... MAL, OCH, ADULT, CHILDREN, plus _tagged forms
 ```
 
@@ -144,9 +144,11 @@ picked. Two warnings are worth taking seriously:
 
 - **"recordings sit N levels below"** &mdash; handled automatically, just confirming.
 - **"recordings come from N different parent folders"** &mdash; you have selected a
-  level that merges separate collections. `annotated-text/` is exactly this: it
-  holds both `abc/` (2 recordings) and `batch_one/`
-  (12 recordings). Point at one of them, not the parent.
+  level that merges collections kept apart on disk. This happens when a corpus
+  arrives in batches and the annotation root holds one wrapper folder per batch.
+  Point at a single batch, unless you really do mean to combine them &mdash; the
+  human module flattens whatever you give it, so combining is a valid choice
+  when the batches are two halves of one corpus.
 
 ---
 
@@ -208,15 +210,17 @@ listed in `browse_roots` &mdash; it is.
 **Per-language WER needs reading carefully.** The human reference tags lines
 `(es)`, `(en)`, `(unknown)` and `(both)`, but langdetect on the hypothesis only
 ever emits `en` and `es`. So `unknown` and `both` score 100% WER by construction
-rather than by error &mdash; about 8.6% of the corpus. The summary reports those rows
-under "not comparable" instead of mixing them into the result.
+rather than by error. The summary reports those rows under "not comparable",
+with the share of the corpus they account for, instead of mixing them into the
+result.
 
 The bigger caveat: per-language WER conflates two different errors. A word
 transcribed correctly but assigned the wrong language counts as a deletion in one
-bucket and an insertion in the other. On this corpus the reference is 10.8%
-English while VTC1 predicts 26.8% and VTC2 24.2% &mdash; roughly double &mdash; which is
-what drives English WER above 100%. The summary prints the English share for both
-sides next to the WER table so the two effects can be told apart.
+bucket and an insertion in the other, so a pipeline that systematically
+over-predicts one language can show a per-language WER above 100% while
+transcribing perfectly well. The summary therefore prints the English share of
+EN+ES words for both reference and hypothesis next to the WER table, so language
+identification and transcription accuracy can be told apart.
 
 **cuDNN on GPU steps.** WhisperX transcription aborts mid-run with
 `Unable to load any of {libcudnn_cnn.so.9...}` because ctranslate2 dlopens cuDNN

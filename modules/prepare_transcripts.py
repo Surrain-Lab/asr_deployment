@@ -2,20 +2,19 @@
 """Normalise an annotation corpus to <dest>/<recording>/<clip>.txt.
 
 Same job as prepare_audio.py, for the text side. The annotation tree is not
-laid out like the audio tree:
+necessarily laid out like the audio tree:
 
-    audio/<recording>/<clip>.wav                              recordings 1 deep
-    annotated-text/<wrapper>/<recording>/<clip>.txt           recordings 2 deep
+    <audio root>/<recording>/<clip>.wav                     recordings 1 deep
+    <annotation root>/<wrapper>/<recording>/<clip>.txt      recordings 2 deep
 
-and annotated-text/ holds TWO wrappers - abc/ (2 recordings, 24 clips) and
-batch_one/ (12 recordings, 144 clips) - that together make up
-the 168-clip corpus. transcript_converter2.py treats immediate subdirectories as
-recordings, so handed annotated-text/ it would take "abc" and
-"batch_one" for recording names and produce two mis-nested
-recordings instead of fourteen.
+and an annotation root may hold more than one wrapper folder, when a corpus was
+collected or delivered in batches. transcript_converter2.py treats immediate
+subdirectories as recordings, so handed such a root it would take the wrapper
+names for recording names and produce a couple of mis-nested recordings instead
+of the real ones.
 
-Flattening here with symlinks means one job can cover all 168 clips regardless of
-how the source is wrapped. Nothing is copied and nothing is modified.
+Flattening here with symlinks means one job can cover the whole corpus however
+the source happens to be wrapped. Nothing is copied and nothing is modified.
 """
 from __future__ import annotations
 

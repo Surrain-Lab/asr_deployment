@@ -3,7 +3,7 @@
 Two tree shapes occur in this project, and telling them apart matters:
 
   A. input corpus    <root>/<recording>/<clip>.wav          clips are FILES
-  B. pipeline output <root>/<recording>/<clip>/<clip>_KCHI_clean.txt
+  B. pipeline output <root>/<recording>/<clip>/<clip>_<SPEAKER>_clean.txt
                                                             clips are FOLDERS
 
 They are genuinely ambiguous by depth alone - both put files three levels down
@@ -14,9 +14,10 @@ remainder is a clip index.
 
 Getting this right is not cosmetic. Pipeline 3.0 assumes recordings are
 immediate subdirectories of whatever it is handed, so a wrong level yields empty
-or mis-nested output with no error. The real corpus contains that trap:
-annotated-text/ holds TWO wrapper folders (abc/ and batch_one/)
-whose recordings would be silently merged.
+or mis-nested output with no error. An annotation root holding several wrapper
+folders - a corpus delivered in batches, say - is the common trap: selecting the
+parent silently merges collections that are kept apart on disk, so Corpus.mixed
+reports it rather than guessing.
 """
 from __future__ import annotations
 
