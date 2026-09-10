@@ -155,6 +155,29 @@ picked. Two warnings are worth taking seriously:
   human module flattens whatever you give it, so combining is a valid choice
   when the batches are two halves of one corpus.
 
+### Audio split across several folders
+
+The annotation side is merged for you: point at a root holding several wrapper
+folders and the flattening step combines them. The audio side is not, because
+`<audio root>/<recording>/<clip>.wav` has no wrapper level to collapse &mdash; the
+recording folders themselves are what must sit side by side.
+
+If a corpus's recordings live under more than one parent (a later batch dropped
+into its own folder, say), build a directory of symlinks and point the job at
+that:
+
+```bash
+COMBINED=/path/to/scratch/full_corpus_audio
+mkdir -p "$COMBINED"
+for src in /path/to/audio/*/ /path/to/second_batch/*/; do
+  ln -s "$(readlink -f "$src")" "$COMBINED/$(basename "$src")"
+done
+```
+
+Nothing is copied, and the preview will confirm the combined count before you
+start. Directory traversal follows symlinks, so a corpus assembled this way
+behaves exactly like a real one.
+
 ---
 
 ## How jobs run
