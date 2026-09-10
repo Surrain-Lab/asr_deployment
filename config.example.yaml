@@ -8,18 +8,18 @@
 #
 # config.yaml is gitignored, so each server keeps its own.
 #
-# The values below are the ones used on oceanus.cs.unlv.edu, kept as a worked
+# The values below are the ones used on your-server.example.edu, kept as a worked
 # example of what each path should point at.
 
 paths:
   # The existing Pipeline 3.0 checkout whose scripts we wrap (never modified).
-  pipeline3:  /home/subedi/Audio_Transcription_Pipeline3.0
+  pipeline3:  /home/USER/Audio_Transcription_Pipeline3.0
   # Model checkouts (these live in 2.0, not 3.0).
-  vtc1_model: /home/subedi/Audio_Transcription_Pipeline2.0/VTC1_Pipeline/voice_type_classifier
-  vtc2_model: /home/subedi/Audio_Transcription_Pipeline2.0/VTC2_Pipeline/New_VTC/VTC/VTC
+  vtc1_model: /home/USER/Audio_Transcription_Pipeline2.0/VTC1_Pipeline/voice_type_classifier
+  vtc2_model: /home/USER/Audio_Transcription_Pipeline2.0/VTC2_Pipeline/New_VTC/VTC/VTC
   # Where every run writes. /sdb_mnt has 1.9 TB free; / only has 241 GB.
-  runs_root:  /sdb_mnt/subedi/ASR_Benchmark_runs
-  conda:      /home/subedi/miniconda3/bin/conda
+  runs_root:  /mnt/fast-scratch/USER/ASR_Benchmark_runs
+  conda:      /home/USER/miniconda3/bin/conda
 
 envs:
   main: whisperx    # WhisperX, evaluation, langdetect, Excel
@@ -27,14 +27,14 @@ envs:
 
 # Directories the file browser is allowed to show. Nothing outside these
 # can be selected as an input path.
-# Note: most project folders under /home/subedi are symlinks onto the
-# subedi-research NFS share (454 TB, 367 TB free). Path checks resolve symlinks
+# Note: most project folders under /home/USER are symlinks onto the
+# USER-research NFS share (454 TB, 367 TB free). Path checks resolve symlinks
 # so a link can never be used to escape these roots - which means the real
 # target must be listed here too, or the genuine data is rejected.
 browse_roots:
-  - /home/subedi
-  - /sdb_mnt/subedi
-  - /mnt/subedi-research
+  - /home/USER
+  - /mnt/fast-scratch/USER
+  - /mnt/research-share
 
 scheduler:
   gpus: [0, 1]        # one heavy job per L40

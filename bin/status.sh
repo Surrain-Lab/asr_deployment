@@ -42,5 +42,5 @@ PY
 
 echo
 echo "Open the UI from your laptop with:"
-echo "  ssh -N -L ${PORT}:localhost:${PORT} subedi@oceanus.cs.unlv.edu"
+echo "  ssh -N -L ${PORT}:localhost:${PORT} ${USER}@$(hostname -f 2>/dev/null || hostname)"
 echo "  then browse to http://localhost:${PORT}"

@@ -2,7 +2,7 @@
 """Generate the cross-pipeline comparison workbooks for one run.
 
 The three Excel scripts in Pipeline 3.0 take no arguments and hardcode
-/home/subedi/Audio_Transcription_Pipeline3.0/output_14clips. Pointed at a run
+/home/USER/Audio_Transcription_Pipeline3.0/output_14clips. Pointed at a run
 directory they would silently read that old corpus and emit workbooks that look
 right but describe different data - so they cannot be called as they are.
 

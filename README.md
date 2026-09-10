@@ -1,7 +1,15 @@
 # ASR_Benchmark
 
-A web front end and job runner for the bilingual child-ASR pipeline on
-`oceanus.cs.unlv.edu`. Point it at folders, press a button, walk away.
+**The Surrain Lab** &middot; Department of Early Childhood, Multilingual, and Special
+Education, University of Nevada, Las Vegas
+*Apoyando el desarrollo bilingüe en el hogar y la escuela*
+
+A web front end and job runner for the lab's bilingual (English&ndash;Spanish)
+child-ASR pipeline. Point it at folders, press a button, walk away.
+
+Built to run on a GPU server and driven from a browser over an SSH tunnel, it
+compares ASR architectures against human CHAT transcripts of child-centred
+daylong recordings and reports WER overall, per speaker, and by language.
 
 It **wraps** `Audio_Transcription_Pipeline3.0` rather than replacing it. Every
 number it produces comes from the same scripts that produced your existing
@@ -106,21 +114,21 @@ Input, one folder per recording, clips inside:
 
 ```
 <audio folder>/
-  DL-3923001002_pre/
-    DL-3923001002_pre_1_002.wav
-    DL-3923001002_pre_1_049.wav
+  REC-0002_pre/
+    REC-0002_pre_1_002.wav
+    REC-0002_pre_1_049.wav
 ```
 
 Output, one folder per clip:
 
 ```
 <run>/human_eval/five_mins_benchmark/
-  DL-3923001002_pre/
-    DL-3923001002_pre_1_002/
-      DL-3923001002_pre_1_002_clean.txt
-      DL-3923001002_pre_1_002_KCHI_clean.txt
-      DL-3923001002_pre_1_002_KCHI_tagged.txt
-      DL-3923001002_pre_1_002_FEM_clean.txt
+  REC-0002_pre/
+    REC-0002_pre_1_002/
+      REC-0002_pre_1_002_clean.txt
+      REC-0002_pre_1_002_KCHI_clean.txt
+      REC-0002_pre_1_002_KCHI_tagged.txt
+      REC-0002_pre_1_002_FEM_clean.txt
       ... MAL, OCH, ADULT, CHILDREN, plus _tagged forms
 ```
 
@@ -137,7 +145,7 @@ picked. Two warnings are worth taking seriously:
 - **"recordings sit N levels below"** &mdash; handled automatically, just confirming.
 - **"recordings come from N different parent folders"** &mdash; you have selected a
   level that merges separate collections. `annotated-text/` is exactly this: it
-  holds both `abc/` (2 recordings) and `human_transcripts_timestamps/`
+  holds both `abc/` (2 recordings) and `batch_one/`
   (12 recordings). Point at one of them, not the parent.
 
 ---
@@ -151,7 +159,7 @@ running jobs alone.
 - **Two GPU jobs at a time**, one per L40, pinned with `CUDA_VISIBLE_DEVICES`.
 - **Four CPU jobs at a time**, in a separate pool, so a quick WER run never
   queues behind a six-hour transcription.
-- Every run writes to `/sdb_mnt/subedi/ASR_Benchmark_runs/<id>_<module>_<time>/`
+- Every run writes to `/mnt/fast-scratch/USER/ASR_Benchmark_runs/<id>_<module>_<time>/`
   along with `job.log` and a `job.json` recording exactly what was run.
 
 Results are browsable and downloadable from the job page; the zip skips
@@ -192,8 +200,8 @@ Each pipeline keeps calling its own copy, and the Language module asks which
 pipeline produced your transcripts because picking wrong silently changes the
 counts.
 
-**Symlinks.** Most project folders under `/home/subedi` are symlinks onto the
-`subedi-research` NFS share. Path checks resolve symlinks so a link cannot be
+**Symlinks.** Most project folders under `/home/USER` are symlinks onto the
+`USER-research` NFS share. Path checks resolve symlinks so a link cannot be
 used to escape the allowed roots, which means the real target must also be
 listed in `browse_roots` &mdash; it is.
 

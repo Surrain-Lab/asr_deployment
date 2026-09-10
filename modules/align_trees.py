@@ -7,9 +7,9 @@ folder name:
     <hyp>/<recording from ref>/<clip>/<clip>_<SPEAKER>_clean.txt
 
 but the two trees do not always agree on that name. In this corpus the human
-reference calls three recordings `DL-1522001002_pre_1`, `DL-3923001002_pre_1`
-and `DL-5624002008_pre_1` while the pipeline outputs call them
-`DL-1522001002_pre`, `DL-3923001002_pre` and `DL-5624002008_pre` - the clip
+reference calls three recordings `REC-0001_pre_1`, `REC-0002_pre_1`
+and `REC-0003_pre_1` while the pipeline outputs call them
+`REC-0001_pre`, `REC-0002_pre` and `REC-0003_pre` - the clip
 folders inside are named identically on both sides. The project's own
 transcript_tags.canonical_key() documents this and sidesteps it, which is why
 wer_by_language.py is unaffected; evaluation.py has no such protection and

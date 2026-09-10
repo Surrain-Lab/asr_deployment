@@ -15,7 +15,7 @@ remainder is a clip index.
 Getting this right is not cosmetic. Pipeline 3.0 assumes recordings are
 immediate subdirectories of whatever it is handed, so a wrong level yields empty
 or mis-nested output with no error. The real corpus contains that trap:
-annotated-text/ holds TWO wrapper folders (abc/ and human_transcripts_timestamps/)
+annotated-text/ holds TWO wrapper folders (abc/ and batch_one/)
 whose recordings would be silently merged.
 """
 from __future__ import annotations

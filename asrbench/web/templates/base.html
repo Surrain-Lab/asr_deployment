@@ -3,12 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}ASR Benchmark{% endblock %}</title>
+<title>{% block title %}ASR Benchmark - The Surrain Lab{% endblock %}</title>
 <style>
 :root{
   --bg:#0f1115; --panel:#171a21; --panel2:#1d212a; --line:#2a2f3a;
   --fg:#e6e9ef; --dim:#98a1b3; --faint:#6b7488;
-  --accent:#5aa9e6; --ok:#4ec9a0; --warn:#e6b455; --bad:#e6706e; --run:#7aa2f7;
+  /* Teal accent follows the Surrain Lab site. */
+  --accent:#2eb8ac; --accent-dim:#1d7a72; --ok:#4ec9a0; --warn:#e6b455;
+  --bad:#e6706e; --run:#5ec8d8;
   --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
 }
 *{box-sizing:border-box}
@@ -19,11 +21,18 @@ a:hover{text-decoration:underline}
 code,.mono{font-family:var(--mono);font-size:12.5px}
 
 .layout{display:flex;min-height:100vh}
-.side{width:210px;flex:0 0 210px;background:var(--panel);border-right:1px solid var(--line);
-  padding:18px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
-.brand{padding:0 18px 16px;border-bottom:1px solid var(--line);margin-bottom:12px}
-.brand b{display:block;font-size:15px;letter-spacing:.02em}
-.brand span{color:var(--faint);font-size:11.5px}
+.side{width:216px;flex:0 0 216px;background:var(--panel);border-right:1px solid var(--line);
+  padding:18px 0 14px;position:sticky;top:0;height:100vh;overflow-y:auto;
+  display:flex;flex-direction:column}
+.brand{padding:0 18px 15px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.brand .lab{display:block;font-size:13.5px;font-weight:600;letter-spacing:.01em;
+  color:var(--accent)}
+.brand b{display:block;font-size:15px;letter-spacing:.02em;margin-top:1px}
+.brand span{color:var(--faint);font-size:11px;display:block;margin-top:3px}
+.side-foot{margin-top:auto;padding:14px 18px 0;border-top:1px solid var(--line);
+  color:var(--faint);font-size:10.5px;line-height:1.6}
+.side-foot .es{font-style:italic;margin:5px 0 6px;color:#7d8799}
+.side-foot .host{font-family:var(--mono);font-size:10px;opacity:.75}
 .side a.nav{display:flex;gap:10px;align-items:center;padding:9px 18px;color:var(--dim);
   font-size:13.5px;border-left:2px solid transparent}
 .side a.nav:hover{background:var(--panel2);color:var(--fg);text-decoration:none}
@@ -134,7 +143,11 @@ pre.log{background:#0a0c10;border:1px solid var(--line);border-radius:8px;paddin
 <body>
 <div class="layout">
   <nav class="side">
-    <div class="brand"><b>ASR Benchmark</b><span>oceanus.cs.unlv.edu</span></div>
+    <div class="brand">
+      <span class="lab">The Surrain Lab</span>
+      <b>ASR Benchmark</b>
+      <span>Bilingual child speech &middot; UNLV</span>
+    </div>
     <a class="nav {% if request.url.path=='/' %}on{% endif %}" href="/">
       <span class="ico">#</span> Dashboard</a>
     <h6>Run a module</h6>
@@ -142,6 +155,11 @@ pre.log{background:#0a0c10;border:1px solid var(--line);border-radius:8px;paddin
     <a class="nav {% if request.url.path=='/new/'+key %}on{% endif %}" href="/new/{{key}}">
       <span class="ico">{{m.icon}}</span> {{m.title}}</a>
     {% endfor %}
+    <div class="side-foot">
+      <div class="es">Apoyando el desarrollo biling&uuml;e<br>en el hogar y la escuela</div>
+      <div>Early Childhood, Multilingual<br>&amp; Special Education, UNLV</div>
+      <div class="host">{{ HOSTNAME }}</div>
+    </div>
   </nav>
   <main class="main">{% block body %}{% endblock %}</main>
 </div>

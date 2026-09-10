@@ -25,6 +25,9 @@ from ..discover import scan_audio, scan_text
 
 app = FastAPI(title="ASR Benchmark")
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
+# Shown in the sidebar so it is obvious which server a tab is pointed at
+# when several are tunnelled at once.
+templates.env.globals["HOSTNAME"] = os.uname().nodename
 
 # Directories excluded from the results zip: large, regenerable, not results.
 BULKY = {"audio_16k", "chunks", "raw_transcripts"}
