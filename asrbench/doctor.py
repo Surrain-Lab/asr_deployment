@@ -241,16 +241,37 @@ def suggest() -> int:
     found = next((g for g in guesses if g.is_dir()), None)
     print(f"  pipeline3:  {found or '<path to Audio_Transcription_Pipeline3.0>'}")
 
-    vtc1 = vtc2 = None
+    # The model checkouts are not necessarily under the pipeline root - on the
+    # machine this was built for they live in a sibling Pipeline2.0 tree - so
+    # search the siblings too. Globs are depth-bounded because these paths are
+    # often NFS and a full walk is slow.
+    bases: list[Path] = []
     if found:
-        for base in (found, found.parent):
-            c1 = base / "VTC1_Pipeline" / "voice_type_classifier"
-            if (c1 / "apply.sh").exists():
-                vtc1 = c1
-            for c2 in base.glob("**/VTC/VTC"):
-                if (c2 / "scripts" / "infer.py").exists():
-                    vtc2 = c2
+        bases.append(found)
+        bases.extend(sorted(found.parent.glob("Audio_Transcription_Pipeline*")))
+    bases.append(Path.home())
+    seen_bases: set[Path] = set()
+
+    vtc1 = vtc2 = None
+    for base in bases:
+        if base in seen_bases or not base.is_dir():
+            continue
+        seen_bases.add(base)
+        if vtc1 is None:
+            for c1 in base.glob("*/voice_type_classifier"):
+                if (c1 / "apply.sh").exists():
+                    vtc1 = c1
                     break
+        if vtc2 is None:
+            for pattern in ("*/*/VTC/VTC", "*/*/*/VTC", "*/VTC"):
+                for c2 in base.glob(pattern):
+                    if (c2 / "scripts" / "infer.py").exists():
+                        vtc2 = c2
+                        break
+                if vtc2:
+                    break
+        if vtc1 and vtc2:
+            break
     print(f"  vtc1_model: {vtc1 or '<path to voice_type_classifier>'}")
     print(f"  vtc2_model: {vtc2 or '<path to VTC checkout>'}")
     print(f"  runs_root:  {Path.home() / 'asrbench_runs'}")
